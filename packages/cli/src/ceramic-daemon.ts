@@ -24,6 +24,16 @@ import type { Server } from 'http';
 
 const DEFAULT_HOSTNAME = '0.0.0.0'
 const DEFAULT_PORT = 7007
+const PATH_TO_CERT = '/etc/letsencrypt/live/ceramic-node.vitalpointai.com/fullchain.pem'
+const PATH_TO_KEY =  '/etc/letsencrypt/live/ceramic-node.vitalpointai.com/privkey.pem'
+
+const fs = require('fs')
+const https = require('https')
+
+const options = {
+  cert: PATH_TO_CERT,
+  key: PATH_TO_KEY
+}
 
 /**
  * Daemon create options
@@ -117,7 +127,8 @@ function upconvertLegacySyncOption(opts: Record<string, any> | undefined) {
  * Ceramic daemon implementation
  */
 export class CeramicDaemon {
-  private server?: Server;
+//  private server?: Server;
+  
   private readonly app: ExpressWithAsync;
   private readonly diagnosticsLogger: DiagnosticsLogger;
 
@@ -139,11 +150,16 @@ export class CeramicDaemon {
     return new Promise<void>((resolve) => {
       const port = this.opts.port || DEFAULT_PORT
       const hostname = this.opts.hostname || DEFAULT_HOSTNAME
-      this.server = this.app.listen(port, hostname, () => {
+      const server = https.createServer(options, app)
+      // this.server = this.app.listen(port, hostname, () => {
+      //   this.diagnosticsLogger.imp(`Ceramic API running on ${hostname}:${port}'`)
+      //   resolve()
+      // })
+      server.listen(port, hostname, () => {
         this.diagnosticsLogger.imp(`Ceramic API running on ${hostname}:${port}'`)
         resolve()
       })
-      this.server.keepAliveTimeout = 60 * 1000
+      server.keepAliveTimeout = 60 * 1000
     })
   }
 
